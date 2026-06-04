@@ -7,9 +7,9 @@ before:
     - go mod tidy
 
 builds:
-  - id: hytale-server-runner
+  - id: hytale-runner
     main: .
-    binary: hytale-server-runner
+    binary: hytale-runner
     env:
       - CGO_ENABLED=0
     goos:

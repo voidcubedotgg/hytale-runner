@@ -75,7 +75,7 @@ java -Xms.. -Xmx.. <extra-jvm-args> -jar <jar> --assets <zip> <extra-server-args
 ## Make targets
 
 ```sh
-make build      # build ./hytale-server-runner (version from git)
+make build      # build ./hytale-runner (version from git)
 make run        # run the server (ARGS="--log-level debug")
 make test       # run tests
 make ci         # fmt-check + vet + test

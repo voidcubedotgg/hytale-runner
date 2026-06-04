@@ -1,6 +1,6 @@
 *.zip
 # Go build output.
-/hytale-server-runner
+/hytale-runner
 *.exe
 coverage.out
 /dist/
