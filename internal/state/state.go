@@ -7,7 +7,7 @@ import (
 	"os"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/voidcubedotgg/hytale-server-runner/internal/config"
+	"github.com/voidcubedotgg/hytale-runner/internal/config"
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content/file"

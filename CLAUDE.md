@@ -1,6 +1,6 @@
-# Hytale server runner
+# Hytale runner
 
-This is ealy W.I.P of runner for Hytale servers that will use OCI (oras) as data store instead of relying on filesystem for state persistance.
+This is ealy W.I.P of runner for Hytale server that will use OCI (oras) as data store instead of relying on filesystem for state persistance.
 
 Program Flow:
 Load game server data from OCI registry

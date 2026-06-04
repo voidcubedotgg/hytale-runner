@@ -1,4 +1,4 @@
-module github.com/voidcubedotgg/hytale-server-runner
+module github.com/voidcubedotgg/hytale-runner
 
 go 1.26.3
 

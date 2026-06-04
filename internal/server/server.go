@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/voidcubedotgg/hytale-server-runner/internal/config"
+	"github.com/voidcubedotgg/hytale-runner/internal/config"
 	"go.uber.org/zap"
 )
 

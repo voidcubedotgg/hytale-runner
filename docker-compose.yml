@@ -2,7 +2,7 @@ services:
   # Local OCI registry (zot) - data store for game server state.
   registry:
     image: ghcr.io/project-zot/zot-linux-arm64:latest
-    container_name: statless-registry
+    container_name: hytale-runner-registry
     restart: unless-stopped
     ports:
       - "5001:5000"
@@ -13,7 +13,7 @@ services:
     build:
       context: .
       dockerfile: .devcontainer/Dockerfile
-    container_name: statless-dev
+    container_name: hytale-runner-dev
     depends_on:
       registry:
         condition: service_started

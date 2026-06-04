@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/voidcubedotgg/hytale-server-runner/internal/config"
-	"github.com/voidcubedotgg/hytale-server-runner/internal/logging"
+	"github.com/voidcubedotgg/hytale-runner/internal/config"
+	"github.com/voidcubedotgg/hytale-runner/internal/logging"
 	"go.uber.org/zap"
 )
 

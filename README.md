@@ -1,4 +1,4 @@
-# hytale-server-runner
+# hytale-runner
 
 Runs a Hytale server, using an **OCI registry** as the state store instead of the
 filesystem. On each run it pulls the saved world/state from the registry, runs

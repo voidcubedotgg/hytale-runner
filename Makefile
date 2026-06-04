@@ -1,5 +1,5 @@
-BINARY  := hytale-server-runner
-PKG     := github.com/voidcubedotgg/hytale-server-runner
+BINARY  := hytale-runner
+PKG     := github.com/voidcubedotgg/hytale-runner
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -X $(PKG)/cmd.version=$(VERSION)
 GO      ?= go

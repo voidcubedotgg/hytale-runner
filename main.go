@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/voidcubedotgg/hytale-server-runner/cmd"
+	"github.com/voidcubedotgg/hytale-runner/cmd"
 )
 
 func main() {

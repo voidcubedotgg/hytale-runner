@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/voidcubedotgg/hytale-server-runner/internal/config"
+	"github.com/voidcubedotgg/hytale-runner/internal/config"
 	"oras.land/oras-go/v2/content/memory"
 )
 

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/voidcubedotgg/hytale-server-runner/internal/config"
+	"github.com/voidcubedotgg/hytale-runner/internal/config"
 )
 
 // fakeJava writes an executable shell script running the given body and returns

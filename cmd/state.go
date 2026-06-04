@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/voidcubedotgg/hytale-server-runner/internal/config"
-	"github.com/voidcubedotgg/hytale-server-runner/internal/state"
+	"github.com/voidcubedotgg/hytale-runner/internal/config"
+	"github.com/voidcubedotgg/hytale-runner/internal/state"
 )
 
 var stateCmd = &cobra.Command{

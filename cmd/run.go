@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/voidcubedotgg/hytale-server-runner/internal/config"
-	"github.com/voidcubedotgg/hytale-server-runner/internal/server"
+	"github.com/voidcubedotgg/hytale-runner/internal/config"
+	"github.com/voidcubedotgg/hytale-runner/internal/server"
 	"go.uber.org/zap"
 )
 
