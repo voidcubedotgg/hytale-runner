@@ -1,0 +1,12 @@
+*.zip
+# Go build output.
+/hytale-server-runner
+*.exe
+coverage.out
+/dist/
+# Local registry data if ever bind-mounted.
+/data/
+/hytale/
+.hytale-downloader-credentials.json
+# Per-maintainer compose overrides (git identity, SSH signing mounts).
+docker-compose.override.yml

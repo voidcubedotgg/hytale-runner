@@ -1,0 +1,24 @@
+# Per-maintainer git identity + SSH commit signing for the dev container.
+#
+# Setup:
+#   1. cp docker-compose.override.yml.example docker-compose.override.yml
+#   2. Edit the pubkey filename below to match your key (id_ed25519.pub, etc.).
+#   3. Enable colima agent forwarding once:
+#        set `forwardAgent: true` in ~/.colima/default/colima.yaml, then `colima restart`.
+#
+# Compose merges docker-compose.override.yml automatically; it is gitignored.
+#
+# Why same-path mounts (${HOME}/... : ${HOME}/...):
+#   Your ~/.gitconfig `user.signingkey` is a host-absolute path. Mounting the
+#   pubkey at the identical path inside the container makes it line up for any
+#   maintainer without hardcoding usernames. Only PUBLIC keys are mounted; the
+#   private key stays on the host and signing goes through the forwarded agent.
+services:
+  dev:
+    volumes:
+      # git identity + signing config (container HOME is /root).
+      - ${HOME}/.gitconfig:/root/.gitconfig:ro
+      # Public signing key — change the filename to match yours.
+      - ${HOME}/.ssh/id_rsa.pub:${HOME}/.ssh/id_rsa.pub:ro
+      # Optional: only needed to verify signatures inside the container.
+      - ${HOME}/.ssh/allowed_signers:${HOME}/.ssh/allowed_signers:ro

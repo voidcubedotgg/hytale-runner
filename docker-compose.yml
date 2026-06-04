@@ -1,0 +1,39 @@
+services:
+  # Local OCI registry (zot) - data store for game server state.
+  registry:
+    image: ghcr.io/project-zot/zot-linux-arm64:latest
+    container_name: statless-registry
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    volumes:
+      - ./deploy/zot/config.json:/etc/zot/config.json:ro
+      - registry-data:/var/lib/registry
+  dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    container_name: statless-dev
+    depends_on:
+      registry:
+        condition: service_started
+    environment:
+      HYRUN_REGISTRY: registry:5000
+      # Use the host SSH agent (forwarded below) for commit signing.
+      SSH_AUTH_SOCK: /run/host-services/ssh-auth.sock
+    volumes:
+      - .:/workspace:cached
+      - ./hytale:/hytale:cached
+      - go-mod-cache:/go/pkg/mod
+      # Host SSH agent, bridged into the colima VM via forwardAgent: true.
+      # Generic for any maintainer; private keys never enter the container.
+      # Mount to the identical path so docker creates a file dest, not a dir.
+      - /run/host-services/ssh-auth.sock:/run/host-services/ssh-auth.sock
+      # Personal git identity + signing material is per-maintainer: see
+      # docker-compose.override.yml.example (gitignored override, auto-merged).
+    working_dir: /workspace
+    command: sleep infinity
+
+volumes:
+  registry-data:
+  go-mod-cache:

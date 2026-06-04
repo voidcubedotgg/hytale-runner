@@ -1,0 +1,20 @@
+{
+  "name": "hytale-server-runner",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go"
+      ],
+      "settings": {
+        "go.toolsManagement.autoUpdate": true
+      }
+    }
+  },
+  "remoteEnv": {
+    "HYRUN_REGISTRY": "registry:5000"
+  }
+}
