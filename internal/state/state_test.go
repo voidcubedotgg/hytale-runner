@@ -121,8 +121,16 @@ func TestRemoteTargetPasswordOnlyEnablesAuth(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RemoteTarget: %v", err)
 	}
-	if _, ok := repo.Client.(*auth.Client); !ok {
+	client, ok := repo.Client.(*auth.Client)
+	if !ok {
 		t.Fatalf("repo.Client = %T, want *auth.Client", repo.Client)
+	}
+	got, err := client.Credential(context.Background(), cfg.Registry)
+	if err != nil {
+		t.Fatalf("Credential: %v", err)
+	}
+	if got.Username != "" || got.Password != cfg.RegistryPass {
+		t.Errorf("credential = %+v, want empty user, pass %q", got, cfg.RegistryPass)
 	}
 }
 
