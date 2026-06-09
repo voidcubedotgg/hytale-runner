@@ -13,6 +13,8 @@ import (
 	"oras.land/oras-go/v2/content/file"
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry/remote"
+	"oras.land/oras-go/v2/registry/remote/auth"
+	"oras.land/oras-go/v2/registry/remote/retry"
 )
 
 // ErrNoState is returned by Store when the data dir holds nothing to push.
@@ -26,7 +28,26 @@ func RemoteTarget(cfg config.Config) (*remote.Repository, error) {
 		return nil, fmt.Errorf("init repository: %w", err)
 	}
 	repo.PlainHTTP = cfg.PlainHTTP
+	if client := authClient(cfg); client != nil {
+		repo.Client = client
+	}
 	return repo, nil
+}
+
+// authClient returns an authenticated client when credentials are configured,
+// or nil to leave the repository on its anonymous default (e.g. local registry).
+func authClient(cfg config.Config) *auth.Client {
+	if cfg.RegistryUser == "" && cfg.RegistryPass == "" {
+		return nil
+	}
+	return &auth.Client{
+		Client: retry.DefaultClient,
+		Cache:  auth.NewCache(),
+		Credential: auth.StaticCredential(cfg.Registry, auth.Credential{
+			Username: cfg.RegistryUser,
+			Password: cfg.RegistryPass,
+		}),
+	}
 }
 
 // Store packs the mutable state under cfg.DataDir and pushes it to dst tagged

@@ -16,6 +16,8 @@ const (
 	KeyAssetsPath      = "assets-path"
 	KeyServerJarPath   = "server-jar-path"
 	KeyRegistry        = "registry"
+	KeyRegistryUser    = "registry-user"
+	KeyRegistryPass    = "registry-pass"
 	KeyStateRepo       = "state-repo"
 	KeyStateTag        = "state-tag"
 	KeyStateArtifact   = "state-artifact"
@@ -38,6 +40,8 @@ type Config struct {
 	AssetsPath      string   `mapstructure:"assets-path"`
 	ServerJarPath   string   `mapstructure:"server-jar-path"`
 	Registry        string   `mapstructure:"registry"`
+	RegistryUser    string   `mapstructure:"registry-user"`
+	RegistryPass    string   `mapstructure:"registry-pass"`
 	StateRepo       string   `mapstructure:"state-repo"`
 	StateTag        string   `mapstructure:"state-tag"`
 	StateArtifact   string   `mapstructure:"state-artifact"`

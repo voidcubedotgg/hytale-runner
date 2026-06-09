@@ -56,6 +56,8 @@ func init() {
 	pf.String(config.KeyAssetsPath, config.Default.AssetsPath, "path to Assets.zip")
 	pf.String(config.KeyServerJarPath, config.Default.ServerJarPath, "path to the server jar")
 	pf.String(config.KeyRegistry, config.Default.Registry, "OCI registry host:port (env: HYRUN_REGISTRY)")
+	pf.String(config.KeyRegistryUser, config.Default.RegistryUser, "registry username (env: HYRUN_REGISTRY_USER)")
+	pf.String(config.KeyRegistryPass, config.Default.RegistryPass, "registry password/token; prefer env: HYRUN_REGISTRY_PASS")
 	pf.String(config.KeyStateRepo, config.Default.StateRepo, "OCI repository for state")
 	pf.String(config.KeyStateTag, config.Default.StateTag, "OCI tag for state")
 	pf.String(config.KeyStateArtifact, config.Default.StateArtifact, "OCI artifact type for state")
@@ -67,7 +69,8 @@ func init() {
 
 	for _, key := range []string{
 		config.KeyDataDir, config.KeyMinMemory, config.KeyMaxMemory, config.KeyAssetsPath,
-		config.KeyServerJarPath, config.KeyRegistry, config.KeyStateRepo, config.KeyStateTag,
+		config.KeyServerJarPath, config.KeyRegistry, config.KeyRegistryUser, config.KeyRegistryPass,
+		config.KeyStateRepo, config.KeyStateTag,
 		config.KeyStateArtifact, config.KeyPlainHTTP, config.KeyJavaBin, config.KeyLogLevel,
 		config.KeyExtraJVMArgs, config.KeyExtraServerArgs,
 	} {
