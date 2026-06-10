@@ -64,12 +64,16 @@ func init() {
 	pf.String(config.KeyLogLevel, config.Default.LogLevel, "log level (debug/info/warn/error)")
 	pf.StringArray(config.KeyExtraJVMArgs, nil, "extra JVM arg, before -jar (repeatable)")
 	pf.StringArray(config.KeyExtraServerArgs, nil, "extra server arg, after the jar (repeatable)")
+	pf.String(config.KeyNATSURL, config.Default.NATSURL, "NATS server URL for status reporting (empty = disabled)")
+	pf.String(config.KeyServerID, config.Default.ServerID, "server id used as the status KV key")
+	pf.String(config.KeyStatusBucket, config.Default.StatusBucket, "NATS KV bucket for server status")
 
 	for _, key := range []string{
 		config.KeyDataDir, config.KeyMinMemory, config.KeyMaxMemory, config.KeyAssetsPath,
 		config.KeyServerJarPath, config.KeyRegistry, config.KeyStateRepo, config.KeyStateTag,
 		config.KeyStateArtifact, config.KeyPlainHTTP, config.KeyJavaBin, config.KeyLogLevel,
 		config.KeyExtraJVMArgs, config.KeyExtraServerArgs,
+		config.KeyNATSURL, config.KeyServerID, config.KeyStatusBucket,
 	} {
 		_ = v.BindPFlag(key, pf.Lookup(key))
 	}

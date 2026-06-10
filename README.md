@@ -64,6 +64,9 @@ Resolved in order: **flags > env > config file > defaults**.
 | `--log-level` | `HYRUN_LOG_LEVEL` | `info` |
 | `--extra-jvm-args` | `HYRUN_EXTRA_JVM_ARGS` | – |
 | `--extra-server-args` | `HYRUN_EXTRA_SERVER_ARGS` | – |
+| `--nats-url` | `HYRUN_NATS_URL` | – (status reporting disabled) |
+| `--server-id` | `HYRUN_SERVER_ID` | hostname |
+| `--status-bucket` | `HYRUN_STATUS_BUCKET` | `hytale-status` |
 
 `--extra-jvm-args` / `--extra-server-args` are repeatable and slot in around the
 jar:
@@ -71,6 +74,22 @@ jar:
 ```
 java -Xms.. -Xmx.. <extra-jvm-args> -jar <jar> --assets <zip> <extra-server-args>
 ```
+
+## Status reporting (NATS)
+
+With `--nats-url` set, `run` publishes its lifecycle phase
+(`starting` → `running` → `stopping` → `stopped` + exit code, or `error` + the
+failure and exit code when state load/store goes wrong) as JSON into a
+JetStream KV bucket under the `--server-id` key. A
+heartbeat re-puts the value every 5s and the bucket TTL is three heartbeats,
+so a key that disappears means the runner died — watch the bucket for fleet
+liveness:
+
+```sh
+nats kv watch hytale-status
+```
+
+NATS being down never blocks a run; status falls back to a no-op with a warning.
 
 ## Make targets
 

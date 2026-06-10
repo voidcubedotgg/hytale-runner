@@ -8,6 +8,12 @@ GO      ?= go
 DC      := docker compose
 DEVSVC  := dev
 
+# Testcontainers (NATS in status tests) mounts the docker socket into its
+# reaper at this in-daemon path. /var/run/docker.sock is correct for native
+# Linux, CI, and inside the colima VM; the host-side docker.host (e.g. the
+# colima socket) belongs in ~/.testcontainers.properties.
+export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE ?= /var/run/docker.sock
+
 .DEFAULT_GOAL := help
 
 .PHONY: help

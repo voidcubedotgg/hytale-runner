@@ -4,15 +4,18 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
-// unset removes env vars for the duration of the test, restoring them after
-// (so ambient values like the container's HYRUN_REGISTRY don't skew defaults).
-func unset(t *testing.T, keys ...string) {
+// unsetHyrunEnv removes every HYRUN_* env var for the duration of the test,
+// restoring them after (so ambient values like the dev container's
+// HYRUN_REGISTRY or HYRUN_NATS_URL don't skew defaults).
+func unsetHyrunEnv(t *testing.T) {
 	t.Helper()
-	for _, k := range keys {
-		if v, ok := os.LookupEnv(k); ok {
+	for _, kv := range os.Environ() {
+		k, v, _ := strings.Cut(kv, "=")
+		if strings.HasPrefix(k, EnvPrefix+"_") {
 			t.Setenv(k, v)
 			os.Unsetenv(k)
 		}
@@ -20,7 +23,7 @@ func unset(t *testing.T, keys ...string) {
 }
 
 func TestLoadDefaults(t *testing.T) {
-	unset(t, "HYRUN_REGISTRY")
+	unsetHyrunEnv(t)
 	cfg, err := Load(New())
 	if err != nil {
 		t.Fatalf("Load: %v", err)
