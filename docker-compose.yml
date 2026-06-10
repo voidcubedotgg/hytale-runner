@@ -9,6 +9,16 @@ services:
     volumes:
       - ./deploy/zot/config.json:/etc/zot/config.json:ro
       - registry-data:/var/lib/registry
+  # NATS with JetStream - status KV (and later log transport).
+  nats:
+    image: nats:2.11-alpine
+    container_name: hytale-runner-nats
+    restart: unless-stopped
+    command: ["-js", "-sd", "/data"]
+    ports:
+      - "4222:4222"
+    volumes:
+      - nats-data:/data
   dev:
     build:
       context: .
@@ -17,8 +27,11 @@ services:
     depends_on:
       registry:
         condition: service_started
+      nats:
+        condition: service_started
     environment:
       HYRUN_REGISTRY: registry:5000
+      HYRUN_NATS_URL: nats://nats:4222
       # Use the host SSH agent (forwarded below) for commit signing.
       SSH_AUTH_SOCK: /run/host-services/ssh-auth.sock
     volumes:
@@ -36,4 +49,5 @@ services:
 
 volumes:
   registry-data:
+  nats-data:
   go-mod-cache:

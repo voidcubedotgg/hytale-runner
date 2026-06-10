@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -24,6 +25,9 @@ const (
 	KeyLogLevel        = "log-level"
 	KeyExtraJVMArgs    = "extra-jvm-args"
 	KeyExtraServerArgs = "extra-server-args"
+	KeyNATSURL         = "nats-url"
+	KeyServerID        = "server-id"
+	KeyStatusBucket    = "status-bucket"
 )
 
 // EnvPrefix namespaces environment variables, e.g. KeyMaxMemory -> HYRUN_MAX_MEMORY.
@@ -46,6 +50,9 @@ type Config struct {
 	LogLevel        string   `mapstructure:"log-level"`
 	ExtraJVMArgs    []string `mapstructure:"extra-jvm-args"`
 	ExtraServerArgs []string `mapstructure:"extra-server-args"`
+	NATSURL         string   `mapstructure:"nats-url"`
+	ServerID        string   `mapstructure:"server-id"`
+	StatusBucket    string   `mapstructure:"status-bucket"`
 }
 
 // Default is the single source of truth for default values, reused both as the
@@ -63,6 +70,18 @@ var Default = Config{
 	PlainHTTP:     true,
 	JavaBin:       "java",
 	LogLevel:      "info",
+	ServerID:      defaultServerID(),
+	StatusBucket:  "hytale-status",
+}
+
+// defaultServerID identifies this runner in the status bucket; the hostname is
+// unique enough for the common one-runner-per-container deployment.
+func defaultServerID() string {
+	host, err := os.Hostname()
+	if err != nil {
+		return "hytale-server"
+	}
+	return host
 }
 
 // New returns a viper instance wired with the env conventions and defaults
@@ -86,6 +105,9 @@ func New() *viper.Viper {
 	v.SetDefault(KeyPlainHTTP, Default.PlainHTTP)
 	v.SetDefault(KeyJavaBin, Default.JavaBin)
 	v.SetDefault(KeyLogLevel, Default.LogLevel)
+	v.SetDefault(KeyNATSURL, Default.NATSURL)
+	v.SetDefault(KeyServerID, Default.ServerID)
+	v.SetDefault(KeyStatusBucket, Default.StatusBucket)
 	return v
 }
 

@@ -7,7 +7,9 @@
 - CI/CD (goreleaser etc.) (done)
 
 ### Nice to have 
+- NATS status KV (done)
+- NATS as log transport (storage stays elsewhere, e.g. Loki)
+- Console commands over NATS request-reply (replaces input named pipe idea)
 - Token broker?
 - Readyz and Livez
-- Input named pipe (console commands)
 - Dockerfile for production
