@@ -4,7 +4,7 @@
 - ExtraJVMArgs - allow specification of JVM args (done)
 - ExtraServer - allow adding extra server args (done)
 - README.md (done)
-- CI/CD (goreleaser etc.)
+- CI/CD (goreleaser etc.) (done)
 
 ### Nice to have 
 - Token broker?
