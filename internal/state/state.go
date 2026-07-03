@@ -20,6 +20,14 @@ import (
 // ErrNoState is returned by Store when the data dir holds nothing to push.
 var ErrNoState = errors.New("no state to store")
 
+// EnsureDataDir creates the mutable state directory if it does not exist.
+func EnsureDataDir(dir string) error {
+	if err := os.MkdirAll(dir, 0o775); err != nil {
+		return fmt.Errorf("create data dir %s: %w", dir, err)
+	}
+	return nil
+}
+
 // RemoteTarget returns the registry handle for the server state artifact.
 // Commands pass the result to Load/Store; tests pass an in-memory target instead.
 func RemoteTarget(cfg config.Config) (*remote.Repository, error) {

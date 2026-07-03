@@ -36,11 +36,37 @@ For commit signing inside the container, copy the override template:
 ## Commands
 
 ```sh
-hytale-runner run            # pull state -> run server -> push state
+hytale-runner run            # one-shot: pull state -> run server -> push state
+hytale-runner serve          # resident: serve AWS MicroVM lifecycle hooks
 hytale-runner state pull     # pull state into the data dir
 hytale-runner state push     # push the data dir as state
 hytale-runner version
 ```
+
+## AWS Lambda MicroVM runtime (`serve`)
+
+`serve` turns the runner into a resident runtime for [AWS Lambda MicroVMs][mvm].
+Instead of the one-shot flow, it stays up for the MicroVM's whole life and drives
+the server from HTTP lifecycle hooks that Lambda posts to
+`/aws/lambda-microvms/runtime/v1/<hook>` on `--hook-port` (default `8080`):
+
+| Hook | Runner action |
+|------|---------------|
+| `run` | pull state from OCI, then start the server (traffic begins after 200) |
+| `suspend` / `resume` | record the transition (disk+memory are checkpointed by Lambda) |
+| `terminate` | stop the server gracefully (`--terminate-grace`), then push state to OCI |
+| `ready` | build-time snapshot gate (200 once the hook server is listening) |
+
+There is also `GET /health` (200 while the game process is alive, else 503).
+Hooks are unauthenticated at the app: Lambda's proxy terminates TLS and enforces
+JWE auth before they reach the runner. State is durable across MicroVMs via the
+OCI round-trip — pulled on `run`, pushed on `terminate`.
+
+The `Dockerfile` builds the image entrypoint (`hytale-runner serve`) on a JRE
+over an Amazon Linux 2023 base; override `BASE_IMAGE` with your Lambda-published
+`base-image-arn` when building for Lambda.
+
+[mvm]: https://docs.aws.amazon.com/lambda/latest/dg/lambda-microvms-guide.html
 
 ## Configuration
 
@@ -64,6 +90,8 @@ Resolved in order: **flags > env > config file > defaults**.
 | `--log-level` | `HYRUN_LOG_LEVEL` | `info` |
 | `--extra-jvm-args` | `HYRUN_EXTRA_JVM_ARGS` | – |
 | `--extra-server-args` | `HYRUN_EXTRA_SERVER_ARGS` | – |
+| `--hook-port` | `HYRUN_HOOK_PORT` | `8080` |
+| `--terminate-grace` | `HYRUN_TERMINATE_GRACE` | `30s` |
 
 `--extra-jvm-args` / `--extra-server-args` are repeatable and slot in around the
 jar:
