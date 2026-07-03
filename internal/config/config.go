@@ -26,6 +26,8 @@ const (
 	KeyLogLevel        = "log-level"
 	KeyExtraJVMArgs    = "extra-jvm-args"
 	KeyExtraServerArgs = "extra-server-args"
+	KeyHookPort        = "hook-port"
+	KeyTerminateGrace  = "terminate-grace"
 )
 
 // EnvPrefix namespaces environment variables, e.g. KeyMaxMemory -> HYRUN_MAX_MEMORY.
@@ -50,23 +52,27 @@ type Config struct {
 	LogLevel        string   `mapstructure:"log-level"`
 	ExtraJVMArgs    []string `mapstructure:"extra-jvm-args"`
 	ExtraServerArgs []string `mapstructure:"extra-server-args"`
+	HookPort        string   `mapstructure:"hook-port"`
+	TerminateGrace  string   `mapstructure:"terminate-grace"`
 }
 
 // Default is the single source of truth for default values, reused both as the
 // viper defaults and as the cobra flag defaults.
 var Default = Config{
-	DataDir:       "/data",
-	MinMemory:     "6G",
-	MaxMemory:     "6G",
-	AssetsPath:    "/hytale/Assets.zip",
-	ServerJarPath: "/hytale/HytaleServer.jar",
-	Registry:      "localhost:5001",
-	StateRepo:     "hytale/state",
-	StateTag:      "latest",
-	StateArtifact: "application/vnd.hytale.server.state",
-	PlainHTTP:     true,
-	JavaBin:       "java",
-	LogLevel:      "info",
+	DataDir:        "/data",
+	MinMemory:      "6G",
+	MaxMemory:      "6G",
+	AssetsPath:     "/hytale/Assets.zip",
+	ServerJarPath:  "/hytale/HytaleServer.jar",
+	Registry:       "localhost:5001",
+	StateRepo:      "hytale/state",
+	StateTag:       "latest",
+	StateArtifact:  "application/vnd.hytale.server.state",
+	PlainHTTP:      true,
+	JavaBin:        "java",
+	LogLevel:       "info",
+	HookPort:       "8080",
+	TerminateGrace: "30s",
 }
 
 // New returns a viper instance wired with the env conventions and defaults
@@ -90,6 +96,8 @@ func New() *viper.Viper {
 	v.SetDefault(KeyPlainHTTP, Default.PlainHTTP)
 	v.SetDefault(KeyJavaBin, Default.JavaBin)
 	v.SetDefault(KeyLogLevel, Default.LogLevel)
+	v.SetDefault(KeyHookPort, Default.HookPort)
+	v.SetDefault(KeyTerminateGrace, Default.TerminateGrace)
 	return v
 }
 

@@ -1,0 +1,14 @@
+*.zip
+# ...but the game assets are a build input for the runtime image.
+!Assets.zip
+# Go build output.
+/hytale-runner
+*.exe
+coverage.out
+/dist/
+# Local registry data if ever bind-mounted.
+/data/
+/hytale/
+.hytale-downloader-credentials.json
+# Per-maintainer compose overrides (git identity, SSH signing mounts).
+docker-compose.override.yml

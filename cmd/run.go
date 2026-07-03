@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/voidcubedotgg/hytale-runner/internal/config"
 	"github.com/voidcubedotgg/hytale-runner/internal/server"
+	"github.com/voidcubedotgg/hytale-runner/internal/state"
 	"go.uber.org/zap"
 )
 
@@ -17,7 +18,7 @@ var runCmd = &cobra.Command{
 		}
 		ctx := cmd.Context()
 
-		if err := ensureDataDir(cfg.DataDir); err != nil {
+		if err := state.EnsureDataDir(cfg.DataDir); err != nil {
 			return err
 		}
 		if err := loadState(ctx, cfg); err != nil {

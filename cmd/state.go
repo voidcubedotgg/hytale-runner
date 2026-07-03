@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/voidcubedotgg/hytale-runner/internal/config"
@@ -23,7 +21,7 @@ var statePullCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if err := ensureDataDir(cfg.DataDir); err != nil {
+		if err := state.EnsureDataDir(cfg.DataDir); err != nil {
 			return err
 		}
 		return loadState(cmd.Context(), cfg)
@@ -44,14 +42,6 @@ var statePushCmd = &cobra.Command{
 
 func init() {
 	stateCmd.AddCommand(statePullCmd, statePushCmd)
-}
-
-// ensureDataDir creates the data dir if missing.
-func ensureDataDir(dir string) error {
-	if err := os.MkdirAll(dir, 0o775); err != nil {
-		return fmt.Errorf("create data dir %s: %w", dir, err)
-	}
-	return nil
 }
 
 // loadState pulls state from the configured registry into the data dir.

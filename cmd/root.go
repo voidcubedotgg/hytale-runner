@@ -66,18 +66,20 @@ func init() {
 	pf.String(config.KeyLogLevel, config.Default.LogLevel, "log level (debug/info/warn/error)")
 	pf.StringArray(config.KeyExtraJVMArgs, nil, "extra JVM arg, before -jar (repeatable)")
 	pf.StringArray(config.KeyExtraServerArgs, nil, "extra server arg, after the jar (repeatable)")
+	pf.String(config.KeyHookPort, config.Default.HookPort, "port the MicroVM lifecycle hook server listens on")
+	pf.String(config.KeyTerminateGrace, config.Default.TerminateGrace, "grace period for the server to stop on the terminate hook")
 
 	for _, key := range []string{
 		config.KeyDataDir, config.KeyMinMemory, config.KeyMaxMemory, config.KeyAssetsPath,
 		config.KeyServerJarPath, config.KeyRegistry, config.KeyRegistryUser, config.KeyRegistryPass,
 		config.KeyStateRepo, config.KeyStateTag,
 		config.KeyStateArtifact, config.KeyPlainHTTP, config.KeyJavaBin, config.KeyLogLevel,
-		config.KeyExtraJVMArgs, config.KeyExtraServerArgs,
+		config.KeyExtraJVMArgs, config.KeyExtraServerArgs, config.KeyHookPort, config.KeyTerminateGrace,
 	} {
 		_ = v.BindPFlag(key, pf.Lookup(key))
 	}
 
-	rootCmd.AddCommand(runCmd, stateCmd, versionCmd)
+	rootCmd.AddCommand(runCmd, serveCmd, stateCmd, versionCmd)
 }
 
 // initConfig reads the config file (if any) onto the shared viper instance. A
@@ -86,8 +88,10 @@ func initConfig(cmd *cobra.Command, args []string) error {
 	if cfgFile != "" {
 		v.SetConfigFile(cfgFile)
 	} else {
+		// No SetConfigType: type is inferred from the .yaml/.yml extension.
+		// Setting it would also make viper match an extensionless file named
+		// "hytale-runner" (e.g. the built binary in cwd) and parse it as YAML.
 		v.SetConfigName("hytale-runner")
-		v.SetConfigType("yaml")
 		v.AddConfigPath(".")
 		v.AddConfigPath("/etc/hytale-runner")
 	}
