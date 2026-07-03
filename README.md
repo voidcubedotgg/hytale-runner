@@ -62,6 +62,21 @@ Hooks are unauthenticated at the app: Lambda's proxy terminates TLS and enforces
 JWE auth before they reach the runner. State is durable across MicroVMs via the
 OCI round-trip — pulled on `run`, pushed on `terminate`.
 
+### Per-MicroVM JVM overrides
+
+The `run-microvm --run-hook-payload` string (delivered to the `run` hook) may be
+a small JSON document overriding **JVM-launch** config for that one MicroVM, so a
+single image can run differently-tuned instances:
+
+```json
+{ "minMemory": "6G", "maxMemory": "8G",
+  "extraJvmArgs": ["-XX:+UseZGC"], "extraServerArgs": ["--world", "nether"] }
+```
+
+Only those four fields are accepted. An empty payload uses the base config; a
+non-empty payload that is malformed or names any other field fails the `run` hook
+(500), so the MicroVM won't serve with a misconfiguration.
+
 The `Dockerfile` builds the image entrypoint (`hytale-runner serve`) on a JRE
 over an Amazon Linux 2023 base; override `BASE_IMAGE` with your Lambda-published
 `base-image-arn` when building for Lambda.

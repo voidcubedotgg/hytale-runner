@@ -9,7 +9,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -48,15 +50,20 @@ type supervisor interface {
 	Alive() bool
 }
 
+// supFactory builds a supervisor for a config. It is the seam tests replace with
+// a fake process, and the point where per-MicroVM run-hook overrides take effect.
+type supFactory func(cfg config.Config) supervisor
+
 // Server serves the MicroVM lifecycle hooks and owns the game process.
 type Server struct {
 	cfg    config.Config
 	log    *zap.SugaredLogger
 	grace  time.Duration
 	target targetFunc
-	sup    supervisor
+	newSup supFactory
+	sup    supervisor // built by newSup on the run hook; nil until then
 
-	mu    sync.Mutex // guards state and serializes lifecycle transitions
+	mu    sync.Mutex // guards state, sup, and serializes lifecycle transitions
 	state lifecycleState
 }
 
@@ -72,10 +79,37 @@ func New(cfg config.Config) (*Server, error) {
 		log:    zap.S(),
 		grace:  grace,
 		target: func(c config.Config) (oras.Target, error) { return state.RemoteTarget(c) },
-		sup:    server.NewSupervisor(cfg),
+		newSup: func(c config.Config) supervisor { return server.NewSupervisor(c) },
 		state:  statePending,
 	}
 	return s, nil
+}
+
+// runOverrides are the JVM-launch fields a MicroVM's runHookPayload may override.
+// A nil pointer or nil slice leaves the base config value in place; a present
+// value replaces it (an empty slice clears the args).
+type runOverrides struct {
+	MinMemory       *string  `json:"minMemory"`
+	MaxMemory       *string  `json:"maxMemory"`
+	ExtraJVMArgs    []string `json:"extraJvmArgs"`
+	ExtraServerArgs []string `json:"extraServerArgs"`
+}
+
+// applyOverrides returns cfg with the provided JVM-launch overrides applied.
+func applyOverrides(cfg config.Config, o runOverrides) config.Config {
+	if o.MinMemory != nil {
+		cfg.MinMemory = *o.MinMemory
+	}
+	if o.MaxMemory != nil {
+		cfg.MaxMemory = *o.MaxMemory
+	}
+	if o.ExtraJVMArgs != nil {
+		cfg.ExtraJVMArgs = o.ExtraJVMArgs
+	}
+	if o.ExtraServerArgs != nil {
+		cfg.ExtraServerArgs = o.ExtraServerArgs
+	}
+	return cfg
 }
 
 func (s *Server) lock()   { s.mu.Lock() }
@@ -126,22 +160,32 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req runRequest
-	_ = json.NewDecoder(r.Body).Decode(&req) // empty/absent body is fine
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
+		s.fail(w, "decode run request", err) // empty/absent body is fine (EOF)
+		return
+	}
 	s.log.Infow("run hook", "microvmId", req.MicrovmID)
 
-	if err := state.EnsureDataDir(s.cfg.DataDir); err != nil {
+	cfg, err := s.effectiveConfig(req.RunHookPayload)
+	if err != nil {
+		s.fail(w, "run hook payload", err)
+		return
+	}
+
+	if err := state.EnsureDataDir(cfg.DataDir); err != nil {
 		s.fail(w, "ensure data dir", err)
 		return
 	}
-	src, err := s.target(s.cfg)
+	src, err := s.target(cfg)
 	if err != nil {
 		s.fail(w, "registry target", err)
 		return
 	}
-	if err := state.Load(r.Context(), s.cfg, src); err != nil {
+	if err := state.Load(r.Context(), cfg, src); err != nil {
 		s.fail(w, "pull state", err)
 		return
 	}
+	s.sup = s.newSup(cfg)
 	if err := s.sup.Start(); err != nil {
 		s.fail(w, "start server", err)
 		return
@@ -150,6 +194,22 @@ func (s *Server) handleRun(w http.ResponseWriter, r *http.Request) {
 	s.state = stateRunning
 	go s.monitor()
 	w.WriteHeader(http.StatusOK)
+}
+
+// effectiveConfig applies a MicroVM's runHookPayload (JSON) over the base config.
+// An empty payload yields the base config; a non-empty payload that is not valid
+// override JSON, or that names an out-of-scope field, is rejected.
+func (s *Server) effectiveConfig(payload string) (config.Config, error) {
+	if strings.TrimSpace(payload) == "" {
+		return s.cfg, nil
+	}
+	dec := json.NewDecoder(strings.NewReader(payload))
+	dec.DisallowUnknownFields()
+	var ov runOverrides
+	if err := dec.Decode(&ov); err != nil {
+		return config.Config{}, fmt.Errorf("parse payload: %w", err)
+	}
+	return applyOverrides(s.cfg, ov), nil
 }
 
 // handleTerminate stops the server gracefully and pushes the final state to the
@@ -217,7 +277,10 @@ func (s *Server) handleReady(w http.ResponseWriter, _ *http.Request) {
 
 // handleHealth reports game-server liveness.
 func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
-	if s.sup.Alive() {
+	s.lock()
+	sup := s.sup
+	s.unlock()
+	if sup != nil && sup.Alive() {
 		w.WriteHeader(http.StatusOK)
 		return
 	}

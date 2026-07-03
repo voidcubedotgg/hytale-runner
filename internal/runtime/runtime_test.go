@@ -27,6 +27,7 @@ type fakeSup struct {
 	stopped  bool
 	startErr error
 	waitCh   chan int
+	gotCfg   config.Config // config the factory built this supervisor with
 }
 
 func newFakeSup() *fakeSup { return &fakeSup{waitCh: make(chan int)} }
@@ -64,7 +65,13 @@ func (f *fakeSup) starts() int {
 	return f.started
 }
 
-func newTestServer(t *testing.T, sup supervisor, tgt func(config.Config) (oras.Target, error)) *Server {
+func (f *fakeSup) config() config.Config {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.gotCfg
+}
+
+func newTestServer(t *testing.T, sup *fakeSup, tgt func(config.Config) (oras.Target, error)) *Server {
 	t.Helper()
 	cfg := config.Default
 	cfg.DataDir = t.TempDir()
@@ -73,8 +80,15 @@ func newTestServer(t *testing.T, sup supervisor, tgt func(config.Config) (oras.T
 		log:    zap.NewNop().Sugar(),
 		grace:  time.Second,
 		target: tgt,
-		sup:    sup,
-		state:  statePending,
+		// The run hook builds the supervisor from the effective config; hand back
+		// the shared fake and record the config it was built with.
+		newSup: func(c config.Config) supervisor {
+			sup.mu.Lock()
+			sup.gotCfg = c
+			sup.mu.Unlock()
+			return sup
+		},
+		state: statePending,
 	}
 }
 
@@ -269,6 +283,75 @@ func TestMonitorRestartsOnExit8(t *testing.T) {
 	}
 	// Let the monitor park again, then unblock it for cleanup.
 	close(sup.waitCh)
+}
+
+func TestRunHookAppliesPayloadOverrides(t *testing.T) {
+	sup := newFakeSup()
+	s := newTestServer(t, sup, staticTarget(memory.New()))
+	t.Cleanup(func() { close(sup.waitCh) })
+
+	payload := `{"microvmId":"mvm-1","runHookPayload":"{\"maxMemory\":\"8G\",\"extraJvmArgs\":[\"-XX:+UseZGC\"]}"}`
+	rec := post(t, s.Handler(), HookBase+"run", payload)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("run = %d, want 200", rec.Code)
+	}
+	got := sup.config()
+	if got.MaxMemory != "8G" {
+		t.Errorf("MaxMemory = %q, want 8G", got.MaxMemory)
+	}
+	if len(got.ExtraJVMArgs) != 1 || got.ExtraJVMArgs[0] != "-XX:+UseZGC" {
+		t.Errorf("ExtraJVMArgs = %v, want [-XX:+UseZGC]", got.ExtraJVMArgs)
+	}
+	// Unset fields keep the base default.
+	if got.MinMemory != config.Default.MinMemory {
+		t.Errorf("MinMemory = %q, want base %q", got.MinMemory, config.Default.MinMemory)
+	}
+}
+
+func TestRunHookEmptyPayloadUsesBaseConfig(t *testing.T) {
+	sup := newFakeSup()
+	s := newTestServer(t, sup, staticTarget(memory.New()))
+	t.Cleanup(func() { close(sup.waitCh) })
+
+	rec := post(t, s.Handler(), HookBase+"run", `{"microvmId":"mvm-1","runHookPayload":""}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("run = %d, want 200", rec.Code)
+	}
+	if got := sup.config(); got.MaxMemory != config.Default.MaxMemory {
+		t.Errorf("MaxMemory = %q, want base %q", got.MaxMemory, config.Default.MaxMemory)
+	}
+}
+
+func TestRunHookMalformedPayloadFails(t *testing.T) {
+	sup := newFakeSup()
+	s := newTestServer(t, sup, staticTarget(memory.New()))
+
+	payload := `{"microvmId":"mvm-1","runHookPayload":"{not json"}`
+	rec := post(t, s.Handler(), HookBase+"run", payload)
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("run = %d, want 500", rec.Code)
+	}
+	if sup.starts() != 0 {
+		t.Errorf("started = %d, want 0 on bad payload", sup.starts())
+	}
+	if s.state != statePending {
+		t.Errorf("state = %d, want pending", s.state)
+	}
+}
+
+func TestRunHookRejectsOutOfScopeField(t *testing.T) {
+	sup := newFakeSup()
+	s := newTestServer(t, sup, staticTarget(memory.New()))
+
+	// javaBin is not an overridable field -> DisallowUnknownFields rejects it.
+	payload := `{"microvmId":"mvm-1","runHookPayload":"{\"javaBin\":\"/evil\"}"}`
+	rec := post(t, s.Handler(), HookBase+"run", payload)
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("run = %d, want 500", rec.Code)
+	}
+	if sup.starts() != 0 {
+		t.Errorf("started = %d, want 0", sup.starts())
+	}
 }
 
 func TestNewParsesGrace(t *testing.T) {
