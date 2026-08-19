@@ -1,4 +1,4 @@
-FROM golang:1.26-bookworm
+FROM golang:1.27-bookworm
 
 # oras CLI for pushing/pulling OCI artifacts from the dev shell.
 ARG ORAS_VERSION=1.2.0
